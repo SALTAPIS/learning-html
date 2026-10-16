@@ -1,8 +1,22 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My First HTML Page</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Recursive:slnt,wght,CASL,CRSV,MONO@-15..0,300..1000,0..1,0..1,0..1&display=swap">
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="favicon.png" type="image/png">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
 </head>
 <body>
     <header id="site-header">
@@ -10,45 +24,60 @@
     </header>
 
 <main>
-    <section class="hero">
+    <section class="hero" id="hero">
         <p class="eyebrow">Web Technology Class</p>
-        <h1>Learning by doing</h1>
-        <p>
-            This site is a small personal web project where I explore basic HTML, CSS, and JavaScript to build a clean multi-page experience.
-        </p>
 
-        <div class="preview-grid">
-            <a class="preview-card" href="quotes.html">
-                <span class="tag">Featured</span>
-                <h2>Quotes</h2>
-                <p>Explore a curated list of inspiring ideas and memorable words.</p>
-            </a>
+        <!-- The "i" in "doing" becomes a 3D toggle switch and the line under "do"
+             becomes the lid of the useless machine (see hero.js). -->
+        <h1 class="hero-title" id="hero-title">
+            <span class="hero-line">Learning</span>
+            <span class="hero-line">by <span class="hero-lid">do</span><span class="hero-switch">i</span>ng.</span>
+        </h1>
 
-            <a class="preview-card" href="project.html">
-                <span class="tag">Ideas</span>
-                <h2>Projects</h2>
-                <p>Browse creative concepts and app ideas for future projects.</p>
-            </a>
-
-            <a class="preview-card" href="machine.html">
-                <span class="tag">3D</span>
-                <h2>Machine</h2>
-                <p>Flip the switch on the most useless machine ever built.</p>
-            </a>
-
-            <a class="preview-card" href="contact.html">
-                <span class="tag">Connect</span>
-                <h2>Contact</h2>
-                <p>Reach out with questions, feedback, or project opportunities.</p>
-            </a>
+        <div class="hero-foot">
+            <p class="hero-lede">
+                This site is a small personal web project where I explore basic HTML, CSS, and JavaScript to build a clean multi-page experience.
+            </p>
+            <div class="hero-actions">
+                <button id="hero-flip" class="machine-btn" type="button">Flip the switch</button>
+                <p class="hero-status" id="hero-status" aria-live="polite">The i in “doing” is a switch.</p>
+            </div>
         </div>
+
+        <div class="hero-stage" id="hero-stage" aria-hidden="true"></div>
     </section>
+
+    <div class="preview-grid">
+        <a class="preview-card" href="quotes.html">
+            <span class="tag">Featured</span>
+            <h2>Quotes</h2>
+            <p>Explore a curated list of inspiring ideas and memorable words.</p>
+        </a>
+
+        <a class="preview-card" href="project.html">
+            <span class="tag">Ideas</span>
+            <h2>Projects</h2>
+            <p>Browse creative concepts and app ideas for future projects.</p>
+        </a>
+
+        <a class="preview-card" href="machine.html">
+            <span class="tag">3D</span>
+            <h2>Machine</h2>
+            <p>Flip the switch on the most useless machine ever built.</p>
+        </a>
+
+        <a class="preview-card" href="contact.html">
+            <span class="tag">Connect</span>
+            <h2>Contact</h2>
+            <p>Reach out with questions, feedback, or project opportunities.</p>
+        </a>
+    </div>
 </main>
 
 <footer>
         <p>&copy; 2026 Web Technology Class, BiUH</p>
 </footer>
 <script src="nav.js"></script>
+<script type="module" src="hero.js"></script>
 </body>
 </html>
-
