@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My most loved quotes</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+ <header id="site-header">
+
+    </header>
+<main>
+  <section class="quote-hero" aria-live="polite">
+    <div class="quote-hero__label">Quote of the moment</div>
+    <blockquote class="quote-hero__block">
+      <p id="featured-quote-text">Success is the sum of small efforts, repeated day in and day out.</p>
+    </blockquote>
+    <div class="quote-hero__meta">
+      <cite id="featured-quote-author">Robert Collier</cite>
+    </div>
+    <button id="next-quote-btn" type="button">Next random quote</button>
+  </section>
+
+    <div class="grid">
+
+<article class="quote highlight">
+  <blockquote>
+    <p>Success is the sum of small efforts, repeated day in and day out.</p>
+  </blockquote>
+  <footer>
+    <cite>Robert Collier</cite>, <span class="source">Source</span>
+  </footer>
+</article>
+
+<article class="quote">
+  <blockquote>
+    <p>It always seems impossible until it is done.</p>
+  </blockquote>
+  <footer>
+    <cite>Nelson Mandela</cite>, <span class="source">Source</span>
+  </footer>
+</article>
+
+<article class="quote">
+  <blockquote>
+    <p>The future depends on what you do today.</p>
+  </blockquote>
+  <footer>
+    <cite>Mahatma Gandhi</cite>, <span class="source">Source</span>
+  </footer>
+</article>
+
+<article class="quote">
+  <blockquote>
+    <p>We are what we repeatedly do. Excellence, then, is not an act, but a habit.</p>
+  </blockquote>
+  <footer>
+    <cite>Aristotle</cite>, <span class="source">Source</span>
+  </footer>
+</article>
+
+<article class="quote highlight">
+  <blockquote>
+    <p>Life is really simple, but we insist on making it complicated.</p>
+  </blockquote>
+  <footer>
+    <cite>Confucius</cite>, <span class="source">Source</span>
+  </footer>
+</article>
+
+<article class="quote">
+  <blockquote>
+    <p>Dream big and dare to fail.</p>
+  </blockquote>
+  <footer>
+    <cite>Norman Vaughan</cite>, <span class="source">Source</span>
+  </footer>
+</article>
+
+<article class="quote">
+  <blockquote>
+    <p>Your time is limited, so don’t waste it living someone else’s life.</p>
+  </blockquote>
+  <footer>
+    <cite>Steve Jobs</cite>, <span class="source">Source</span>
+  </footer>
+</article>
+
+<article class="quote">
+  <blockquote>
+    <p>Make something difficult look easy.</p>
+  </blockquote>
+  <footer>
+    <cite>Daniel Eatock</cite>, <span class="source">Source</span>
+  </footer>
+</article>
+
+<article class="quote highlight">
+  <blockquote>
+    <p>Love is not idealization. Every true lover knows that if you really love a woman or a man, you do not idealize him or her.</p>
+  </blockquote>
+  <footer>
+    <cite>Slavoj Žižek</cite>, <span class="source">Source</span>
+  </footer>
+</article>
+
+<article class="quote">
+  <blockquote>
+    <p>Life will give you whatever experience is most helpful for the evolution of your consciousness.</p>
+  </blockquote>
+  <footer>
+    <cite>Eckhart Tolle</cite>, <span class="source">Source</span>
+  </footer>
+</article>
+
+<article class="quote">
+  <blockquote>
+    <p>If you don't believe me or don't get it, I don't have time to try to convince you, sorry.</p>
+  </blockquote>
+  <footer>
+    <cite>Satoshi Nakamoto</cite>, <span class="source">Source</span>
+  </footer>
+</article>
+
+<article class="quote">
+  <blockquote>
+    <p>The key thing about all the world's big problems is that they have to be dealt with collectively.</p>
+  </blockquote>
+  <footer>
+    <cite>Douglas Engelbart</cite>, <span class="source">Source</span>
+  </footer>
+</article>
+
+<article class="quote">
+  <blockquote>
+    <p>When you invent the ship, you also invent the shipwreck.</p>
+  </blockquote>
+  <footer>
+    <cite>Paul Virilio</cite>, <span class="source">Source</span>
+  </footer>
+</article>
+
+</div>
+</main>
+
+ <footer>
+        <p>&copy; 2026 Web Technology Class, BiUH</p>
+    </footer>
+<script src="nav.js"></script>
+<script>
+  const quotes = [
+    { text: "Success is the sum of small efforts, repeated day in and day out.", author: "Robert Collier" },
+    { text: "It always seems impossible until it is done.", author: "Nelson Mandela" },
+    { text: "The future depends on what you do today.", author: "Mahatma Gandhi" },
+    { text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },
+    { text: "Life is really simple, but we insist on making it complicated.", author: "Confucius" },
+    { text: "Dream big and dare to fail.", author: "Norman Vaughan" },
+    { text: "Your time is limited, so don’t waste it living someone else’s life.", author: "Steve Jobs" },
+    { text: "Make something difficult look easy.", author: "Daniel Eatock" },
+    { text: "Love is not idealization. Every true lover knows that if you really love a woman or a man, you do not idealize him or her.", author: "Slavoj Žižek" },
+    { text: "Life will give you whatever experience is most helpful for the evolution of your consciousness.", author: "Eckhart Tolle" },
+    { text: "If you don't believe me or don't get it, I don't have time to try to convince you, sorry.", author: "Satoshi Nakamoto" },
+    { text: "The key thing about all the world's big problems is that they have to be dealt with collectively.", author: "Douglas Engelbart" },
+    { text: "When you invent the ship, you also invent the shipwreck.", author: "Paul Virilio" }
+  ];
+
+  const featuredText = document.getElementById('featured-quote-text');
+  const featuredAuthor = document.getElementById('featured-quote-author');
+  const nextQuoteButton = document.getElementById('next-quote-btn');
+
+  let currentIndex = -1;
+
+  function getRandomIndex(excludeIndex = -1) {
+    let nextIndex = Math.floor(Math.random() * quotes.length);
+
+    while (quotes.length > 1 && nextIndex === excludeIndex) {
+      nextIndex = Math.floor(Math.random() * quotes.length);
+    }
+
+    return nextIndex;
+  }
+
+  function showQuote(index) {
+    currentIndex = index;
+    const quote = quotes[index];
+    featuredText.textContent = quote.text;
+    featuredAuthor.textContent = quote.author;
+  }
+
+  nextQuoteButton.addEventListener('click', function () {
+    showQuote(getRandomIndex(currentIndex));
+  });
+
+  showQuote(getRandomIndex());
+</script>
+</body>
+</html>

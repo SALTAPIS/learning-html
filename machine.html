@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Useless Machine</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <header id="site-header">
+
+    </header>
+
+    <main>
+        <p class="eyebrow">Three.js experiment</p>
+        <h1>The Useless Machine</h1>
+        <p>
+            A box with a single switch. Flip it on, and the lid opens, a hand reaches out,
+            switches it off again and disappears. That is all it does. Click the switch
+            (or the button below) and drag to look around.
+        </p>
+
+        <div class="machine-stage" id="machine-stage" role="img" aria-label="3D model of the useless machine: a wooden box with a toggle switch and a hidden mechanical hand"></div>
+
+        <div class="machine-controls">
+            <button id="flip-btn" class="machine-btn" type="button">Flip the switch</button>
+            <button id="sound-btn" class="machine-btn machine-btn--ghost" type="button" aria-pressed="true">Sound: on</button>
+            <p class="machine-count">Switched itself off <strong id="machine-count">0</strong> times</p>
+        </div>
+        <p class="machine-status" id="machine-status" aria-live="polite">Waiting for someone to touch the switch.</p>
+
+        <section class="machine-history">
+            <h2>A little history</h2>
+            <p>
+                The idea came from Marvin Minsky in the early 1950s, while he was a graduate student at
+                Bell Telephone Laboratories. His colleague Claude Shannon, the father of information theory,
+                built a version and kept it on his desk, where it became known as the
+                <em>Ultimate Machine</em>.
+            </p>
+            <p>
+                Science-fiction writer Arthur C. Clarke saw it at Shannon's office and later wrote that there was
+                "something unspeakably sinister about a machine that does nothing — absolutely nothing — except
+                switch itself off."
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Web Technology Class, BiUH</p>
+    </footer>
+<script src="nav.js"></script>
+<script type="module" src="machine.js"></script>
+</body>
+</html>
