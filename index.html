@@ -4,74 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My First HTML Page</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Recursive:slnt,wght,CASL,CRSV,MONO@-15..0,300..1000,0..1,0..1,0..1&display=swap">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="favicon.png" type="image/png">
     <script type="importmap">
     {
         "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js",
             "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
         }
     }
     </script>
+    <!-- Start fetching the 3D code right away instead of after the page has been parsed -->
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js">
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js">
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/geometries/RoundedBoxGeometry.js">
+    <link rel="modulepreload" href="hero.js">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Recursive:slnt,wght,CASL,CRSV,MONO@-15..0,300..1000,0..1,0..1,0..1&display=swap">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <script>
+        // The headline waits for its font (2 s at most) and then makes its
+        // entrance once, in the right typeface (see "Entrance" in styles.css)
+        document.documentElement.classList.add('js');
+        (() => {
+            const arrive = () => document.documentElement.classList.add('fonts-in');
+            setTimeout(arrive, 2000);
+            document.fonts?.load('800 100px Recursive').then(arrive, arrive);
+        })();
+    </script>
 </head>
-<body>
+<body class="stage-page">
     <header id="site-header">
 
     </header>
 
 <main>
     <section class="hero" id="hero">
-        <p class="eyebrow">Web Technology Class</p>
+        <div class="hero-inner">
+            <p class="eyebrow">Web Technology Class</p>
 
-        <!-- The "i" in "doing" becomes a 3D toggle switch and the line under "do"
-             becomes the lid of the useless machine (see hero.js). -->
-        <h1 class="hero-title" id="hero-title">
-            <span class="hero-line">Learning</span>
-            <span class="hero-line">by <span class="hero-lid">do</span><span class="hero-switch">i</span>ng.</span>
-        </h1>
+            <!-- The "i" in "doing" becomes a 3D toggle switch and the line under "do"
+                 becomes the lid of the useless machine (see hero.js). -->
+            <h1 class="hero-title" id="hero-title">
+                <span class="hero-line">Learning</span>
+                <span class="hero-line">by <span class="hero-lid">do</span><span class="hero-switch">i</span>ng.</span>
+            </h1>
 
-        <div class="hero-foot">
-            <p class="hero-lede">
-                This site is a small personal web project where I explore basic HTML, CSS, and JavaScript to build a clean multi-page experience.
-            </p>
-            <div class="hero-actions">
-                <button id="hero-flip" class="machine-btn" type="button">Flip the switch</button>
-                <p class="hero-status" id="hero-status" aria-live="polite">The i in “doing” is a switch.</p>
+            <div class="hero-foot">
+                <p class="hero-lede">
+                    This site is a small personal web project where I explore basic HTML, CSS, and JavaScript to build a clean multi-page experience.
+                </p>
+                <div class="hero-actions">
+                    <button id="hero-flip" class="machine-btn" type="button">Flip the switch</button>
+                    <p class="hero-status" id="hero-status" aria-live="polite">The i in “doing” is a switch.</p>
+                </div>
             </div>
         </div>
 
         <div class="hero-stage" id="hero-stage" aria-hidden="true"></div>
     </section>
 
-    <div class="preview-grid">
-        <a class="preview-card" href="quotes.html">
-            <span class="tag">Featured</span>
-            <h2>Quotes</h2>
-            <p>Explore a curated list of inspiring ideas and memorable words.</p>
-        </a>
+    <section class="stage-card" aria-label="Pages">
+        <div class="preview-grid">
+            <a class="preview-card" href="quotes.html">
+                <span class="tag">Featured</span>
+                <h2>Quotes</h2>
+                <p>Explore a curated list of inspiring ideas and memorable words.</p>
+            </a>
 
-        <a class="preview-card" href="project.html">
-            <span class="tag">Ideas</span>
-            <h2>Projects</h2>
-            <p>Browse creative concepts and app ideas for future projects.</p>
-        </a>
+            <a class="preview-card" href="project.html">
+                <span class="tag">Ideas</span>
+                <h2>Projects</h2>
+                <p>Browse creative concepts and app ideas for future projects.</p>
+            </a>
 
-        <a class="preview-card" href="machine.html">
-            <span class="tag">3D</span>
-            <h2>Machine</h2>
-            <p>Flip the switch on the most useless machine ever built.</p>
-        </a>
+            <a class="preview-card" href="machine.html">
+                <span class="tag">3D</span>
+                <h2>Machine</h2>
+                <p>Flip the switch on the most useless machine ever built.</p>
+            </a>
 
-        <a class="preview-card" href="contact.html">
-            <span class="tag">Connect</span>
-            <h2>Contact</h2>
-            <p>Reach out with questions, feedback, or project opportunities.</p>
-        </a>
-    </div>
+            <a class="preview-card" href="contact.html">
+                <span class="tag">Connect</span>
+                <h2>Contact</h2>
+                <p>Reach out with questions, feedback, or project opportunities.</p>
+            </a>
+        </div>
+    </section>
 </main>
 
 <footer>

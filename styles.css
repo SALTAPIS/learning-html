@@ -11,10 +11,30 @@
     --muted: #7a5b64;
     --border: rgba(138, 79, 104, 0.12);
     --shadow: 0 18px 40px rgba(143, 82, 100, 0.12);
+    --header-h: 82px;
+
+    /* Full-bleed stages (home hero, machine page): a pale mist here, darkness in dark mode */
+    --stage-bg: #fffaf8;
+    --stage-deep: #f0d9d5;
+    --stage-ink: #5f2d45;
+    --stage-dim: #8a6b74;
+    --stage-line: rgba(138, 79, 104, 0.25);
+    --stage-hover: #c0517a;
+    --stage-glass: rgba(255, 255, 255, 0.55);
+    --stage-vignette: rgba(150, 90, 110, 0.14);
+    --stage-ember: #ff5a3c;
+    --stage-ember-glow: rgba(255, 90, 60, 0.22);
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.07'/%3E%3C/svg%3E");
 }
 
 * {
     box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    html {
+        scroll-behavior: smooth;
+    }
 }
 
 body {
@@ -23,6 +43,15 @@ body {
     background: linear-gradient(180deg, var(--bg) 0%, #fffaf8 100%);
     color: var(--text);
     line-height: 1.6;
+}
+
+/* nav.js fetches the navigation; keep its space so the page doesn't jump when it arrives */
+#site-header {
+    min-height: var(--header-h);
+}
+
+#site-header nav {
+    animation: arrive-soft 0.4s ease both;
 }
 
 header {
@@ -475,6 +504,15 @@ body.dark-mode {
     --muted: #d8bdc7;
     --border: rgba(255, 255, 255, 0.09);
     --shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
+    --stage-bg: #1b1117;
+    --stage-deep: #060304;
+    --stage-ink: rgba(255, 238, 242, 0.85);
+    --stage-dim: rgba(255, 238, 242, 0.5);
+    --stage-line: rgba(255, 238, 242, 0.2);
+    --stage-hover: #fff;
+    --stage-glass: rgba(255, 255, 255, 0.05);
+    --stage-vignette: rgba(0, 0, 0, 0.55);
+    --stage-ember-glow: rgba(255, 90, 60, 0.45);
     background: linear-gradient(180deg, var(--bg) 0%, #120d14 100%);
 }
 
@@ -533,6 +571,10 @@ body.dark-mode footer {
 }
 
 @media (max-width: 720px) {
+    :root {
+        --header-h: 192px;
+    }
+
     nav {
         flex-direction: column;
         align-items: flex-start;
@@ -550,31 +592,253 @@ body.dark-mode footer {
         text-align: center;
     }
 }
-/* Machine page */
-.machine-stage {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 16 / 10;
-    margin-top: 1.5rem;
-    border-radius: 18px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    background: radial-gradient(ellipse at 50% 35%, #ffffff 0%, var(--bg-strong) 100%);
-    touch-action: none;
+/* Stage pages (body.stage-page): the page opens with a full-bleed stage and
+   the navigation floats over it */
+body.stage-page header {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 10;
+    background: none;
+    border: 0;
+    box-shadow: none;
 }
 
-.machine-stage canvas {
+body.stage-page #logo a,
+body.stage-page nav a,
+body.stage-page .theme-toggle {
+    color: var(--stage-ink);
+}
+
+body.stage-page nav a:hover,
+body.stage-page nav a:focus {
+    color: var(--stage-hover);
+}
+
+body.stage-page .theme-toggle {
+    background: var(--stage-glass);
+    border-color: var(--stage-line);
+    box-shadow: none;
+}
+
+body.stage-page main {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+/* The usual content card, for what comes below a stage */
+.stage-card {
+    width: min(1100px, 90%);
+    margin: 3rem auto;
+    padding: 2.2rem 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+}
+
+.stage-card > :first-child {
+    margin-top: 0;
+}
+
+/* Machine page: the box only comes out of the mist (or the dark) once the 3D
+   scene is ready (machine.js adds .is-ready), and the controls only once it
+   has fully arrived (.is-awake). Until then a crack of light breathes, and it
+   only starts whispering if loading takes a while. */
+.machine-stage {
+    position: relative;
+    height: 100vh;
+    height: 100svh;
+    min-height: 30rem;
+    overflow: hidden;
+    color: var(--stage-ink);
+    background: radial-gradient(ellipse at 50% 58%, var(--stage-bg) 0%, var(--stage-deep) 85%);
+}
+
+/* Vignette and a little film grain on top of everything 3D */
+.machine-stage::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse at 50% 52%, transparent 45%, var(--stage-vignette) 100%),
+        var(--grain);
+}
+
+/* machine.js fades the canvas in (slowly out of the light mist, quicker out of the dark) */
+.machine-view {
+    position: absolute;
+    inset: 0;
+}
+
+.machine-stage:not(.is-ready) .machine-view {
+    visibility: hidden;
+}
+
+.machine-view canvas {
     display: block;
     width: 100%;
     height: 100%;
 }
 
+.machine-veil {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 2.4rem;
+    pointer-events: none;
+    transition: opacity 1.4s ease, visibility 0s linear 1.4s;
+}
+
+.machine-stage.is-ready .machine-veil {
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* Light leaking from under a lid */
+.machine-slit {
+    width: min(9rem, 32vw);
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, var(--stage-ember) 28%, #ffc2a3 50%, var(--stage-ember) 72%, transparent);
+    box-shadow: 0 0 18px 2px var(--stage-ember-glow), 0 0 70px 10px rgba(255, 90, 60, 0.16);
+    animation: slit-breathe 3.4s ease-in-out infinite;
+}
+
+@keyframes slit-breathe {
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: scaleX(0.72);
+    }
+    50% {
+        opacity: 1;
+        transform: scaleX(1);
+    }
+}
+
+.machine-whisper {
+    grid-area: 2 / 1;
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    color: var(--stage-dim);
+    opacity: 0;
+}
+
+.machine-whisper--soon {
+    animation: whisper-pass 4.6s ease 2.4s both;
+}
+
+.machine-whisper--late {
+    animation: whisper-stay 1.6s ease 7.5s both;
+}
+
+.machine-whisper--failed,
+.machine-stage.is-failed .machine-whisper {
+    display: none;
+}
+
+.machine-stage.is-failed .machine-whisper--failed {
+    display: block;
+    animation: whisper-stay 1.6s ease both;
+}
+
+.machine-stage.is-failed .machine-slit {
+    animation: none;
+    opacity: 0.15;
+}
+
+@keyframes whisper-pass {
+    0% {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    18%,
+    78% {
+        opacity: 1;
+        transform: none;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes whisper-stay {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* Status line, counter and buttons, offered once the box has arrived */
+.machine-hud {
+    position: absolute;
+    inset: auto 0 0;
+    z-index: 3;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    padding: clamp(1.2rem, 4vw, 2.6rem);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: opacity 1.6s ease, transform 1.6s ease, visibility 0s linear 1.6s;
+}
+
+.machine-stage.is-ready.is-awake .machine-hud {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: opacity 1.6s ease, transform 1.6s ease, visibility 0s;
+}
+
+.machine-status {
+    margin: 0;
+    min-height: 1.5em;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+    color: var(--stage-ink);
+}
+
+.machine-count {
+    margin: 0.35rem 0 0;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    color: var(--stage-dim);
+    animation: whisper-stay 1.2s ease both;
+}
+
+.machine-count strong {
+    color: var(--stage-ink);
+    font-variant-numeric: tabular-nums;
+}
+
 .machine-controls {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    gap: 0.8rem 1rem;
-    margin-top: 1.2rem;
+    gap: 0.6rem;
+    pointer-events: auto;
 }
 
 .machine-btn {
@@ -595,54 +859,97 @@ body.dark-mode footer {
     transform: translateY(-1px);
 }
 
-.machine-btn--ghost {
-    background: transparent;
-    color: var(--primary-deep);
-    border: 1px solid var(--border);
+/* On the stage the buttons stay quiet */
+.machine-stage .machine-btn {
+    padding: 0.7rem 1.2rem;
+    background: var(--stage-glass);
+    color: var(--stage-ink);
+    border: 1px solid rgba(255, 90, 60, 0.45);
     box-shadow: none;
     font-weight: 600;
+    backdrop-filter: blur(4px);
+    transition: border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.machine-count {
-    margin: 0 0 0 auto;
-    color: var(--muted);
+.machine-stage .machine-btn--ghost {
+    border-color: var(--stage-line);
 }
 
-.machine-count strong {
-    color: var(--primary-deep);
-    font-variant-numeric: tabular-nums;
+.machine-stage .machine-btn:hover,
+.machine-stage .machine-btn:focus-visible {
+    transform: none;
+    color: var(--stage-hover);
+    border-color: var(--stage-hover);
+    box-shadow: 0 0 24px rgba(255, 90, 60, 0.18);
 }
 
-.machine-status {
-    min-height: 1.6em;
-    margin: 0.8rem 0 0;
-    font-style: italic;
-    color: var(--primary);
+/* The wheel zooms the box, so the way down to the history is a link */
+.machine-more {
+    position: absolute;
+    left: 50%;
+    bottom: clamp(1.2rem, 4vw, 2.6rem);
+    z-index: 3;
+    translate: -50% 0;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--stage-dim);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 1.6s ease, color 0.3s ease, visibility 0s linear 1.6s;
 }
 
-.machine-history {
-    margin-top: 2.2rem;
-    padding-top: 1.2rem;
-    border-top: 1px solid var(--border);
+.machine-more::after {
+    content: " ↓";
+}
+
+.machine-more:hover,
+.machine-more:focus-visible {
+    color: var(--stage-hover);
+}
+
+.machine-stage.is-ready.is-awake .machine-more {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 1.6s ease 0.6s, color 0.3s ease, visibility 0s;
 }
 
 .machine-history h2 {
-    margin-top: 0;
     color: var(--primary-deep);
 }
 
-body.dark-mode .machine-stage {
-    background: radial-gradient(ellipse at 50% 35%, #3a2a38 0%, #17101a 100%);
+@media (max-width: 480px) {
+    :root {
+        --header-h: 231px;
+    }
 }
 
 @media (max-width: 720px) {
-    .machine-stage {
-        aspect-ratio: 4 / 3;
+    .machine-hud {
+        flex-direction: column;
+        align-items: flex-start;
     }
 
-    .machine-count {
-        margin-left: 0;
-        width: 100%;
+    /* touch scrolls past the stage anyway */
+    .machine-more {
+        display: none;
+    }
+
+    .stage-card {
+        padding: 1.5rem 1.1rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .machine-slit {
+        animation: none;
+        opacity: 0.8;
+    }
+
+    .machine-hud {
+        transform: none;
     }
 }
 
@@ -652,14 +959,29 @@ body.dark-mode .machine-stage {
 .hero {
     --hero-on: #c0517a;
     position: relative;
-    padding: 0.5rem 0 2.4rem;
-    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: calc(var(--header-h) + 1.5rem) 0 clamp(2rem, 7vh, 4.5rem);
+    overflow: hidden;
+    background:
+        var(--grain),
+        radial-gradient(ellipse at 50% 52%, transparent 45%, var(--stage-vignette) 100%),
+        radial-gradient(ellipse at 50% 58%, var(--stage-bg) 0%, var(--stage-deep) 85%);
+}
+
+/* The content lines up with the navigation; the 3D layer spans the full width */
+.hero-inner {
+    width: min(1100px, 90%);
+    margin: 0 auto;
 }
 
 .hero-title {
-    margin: 0.15em 0 0.4em;
+    margin: 0.1em 0 0.35em;
     font-family: "Recursive", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    font-size: clamp(3rem, 15vw, 11rem);
+    font-size: clamp(3rem, min(19vw, 24vh), 15.5rem);
     font-weight: 800;
     font-variation-settings: "wght" 800, "CASL" 0, "slnt" 0, "CRSV" 0, "MONO" 0;
     line-height: 0.9;
@@ -673,6 +995,7 @@ body.dark-mode .machine-stage {
 }
 
 .hero-lid {
+    transition: text-decoration-color 0.6s ease;
     text-decoration: underline var(--accent);
     text-decoration-thickness: 0.085em;
     text-underline-offset: 0.06em;
@@ -723,6 +1046,13 @@ body.dark-mode .machine-stage {
     inset: 0;
     z-index: 1;
     pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+}
+
+/* The handover: the 3D parts fade in while the i and the underline fade out */
+.hero.is-live .hero-stage {
+    opacity: 1;
 }
 
 .hero-stage canvas {
@@ -742,6 +1072,7 @@ body.dark-mode .machine-stage {
     margin: 0;
     max-width: 46ch;
     font-size: 1.12rem;
+    color: var(--stage-ink);
 }
 
 .hero-actions {
@@ -755,13 +1086,18 @@ body.dark-mode .machine-stage {
     display: none;
 }
 
+/* ...offered once the i has tipped over into a switch */
+.hero.is-live .hero-actions {
+    animation: arrive 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 1.5s both;
+}
+
 .hero-status {
     margin: 0;
     min-height: 1.5em;
     font-family: "Recursive", ui-monospace, Menlo, monospace;
     font-variation-settings: "MONO" 1, "CASL" 0;
     font-size: 0.82rem;
-    color: var(--muted);
+    color: var(--stage-dim);
 }
 
 .visually-hidden {
@@ -780,6 +1116,53 @@ body.dark-mode .hero {
     --hero-on: var(--accent);
 }
 
+/* Entrance: the script in index.html adds .js at once and .fonts-in when the
+   headline font has arrived. Until then the hero waits; then it rises in,
+   line by line, while the 3D code is still loading. */
+.js .hero .eyebrow,
+.js .hero-line,
+.js .hero-lede,
+.js .preview-grid {
+    opacity: 0;
+}
+
+.fonts-in .hero .eyebrow,
+.fonts-in .hero-line,
+.fonts-in .hero-lede,
+.fonts-in .preview-grid {
+    opacity: 1;
+    animation: arrive 1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.fonts-in .hero-line:nth-child(1) {
+    animation-delay: 0.08s;
+}
+
+.fonts-in .hero-line:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.fonts-in .hero-lede {
+    animation-delay: 0.45s;
+}
+
+.fonts-in .preview-grid {
+    animation-delay: 0.6s;
+}
+
+@keyframes arrive {
+    from {
+        opacity: 0;
+        transform: translateY(0.3em);
+    }
+}
+
+@keyframes arrive-soft {
+    from {
+        opacity: 0;
+    }
+}
+
 @media (max-width: 720px) {
     .hero-foot {
         grid-template-columns: 1fr;
@@ -789,5 +1172,13 @@ body.dark-mode .hero {
 @media (prefers-reduced-motion: reduce) {
     .hero-ch {
         transition: none;
+    }
+
+    .fonts-in .hero .eyebrow,
+    .fonts-in .hero-line,
+    .fonts-in .hero-lede,
+    .fonts-in .preview-grid,
+    .hero.is-live .hero-actions {
+        animation-name: arrive-soft;
     }
 }

@@ -1,3 +1,9 @@
+// Apply the saved theme straight away, not after the nav has been fetched,
+// so the page doesn't flash light first
+if (localStorage.getItem('theme') === 'dark') {
+  document.body.classList.add('dark-mode');
+}
+
 fetch('nav.html')
   .then(response => response.text())
   .then(html => {
@@ -6,19 +12,13 @@ fetch('nav.html')
     const themeToggle = document.querySelector('.theme-toggle');
     const themeIcon = document.querySelector('.theme-toggle__icon');
     const body = document.body;
-    const storedTheme = localStorage.getItem('theme');
 
     function updateThemeIcon(isDarkMode) {
       if (!themeIcon) return;
       themeIcon.textContent = isDarkMode ? '☀️' : '🌙';
     }
 
-    if (storedTheme === 'dark') {
-      body.classList.add('dark-mode');
-      updateThemeIcon(true);
-    } else {
-      updateThemeIcon(false);
-    }
+    updateThemeIcon(body.classList.contains('dark-mode'));
 
     if (themeToggle) {
       themeToggle.addEventListener('click', () => {

@@ -14,6 +14,7 @@ const ARM = { x: 0.4, y: 0.45, len: 1.85, finger: 0.42, fingerR: 0.055 };
 const LEVER = { x: 1.4, y: 1.86, len: 0.5, r: 0.045, on: deg(25), off: deg(-25) };
 const LID_OPEN = deg(36);
 const LID_PEEK = deg(13);
+const LID_CRACK = deg(5); // the one-off peek before anyone has touched anything
 const ARM_MAX = deg(110);
 const ARM_CLEAR = deg(24); // below this the arm is fully under the lid
 const TEASE_AT = deg(92);
@@ -22,40 +23,56 @@ const TEASE_AT = deg(92);
 // Scene setup
 // ---------------------------------------------------------------------------
 const stage = document.getElementById('machine-stage');
+const view = document.getElementById('machine-view');
 const statusEl = document.getElementById('machine-status');
 const countEl = document.getElementById('machine-count');
+const countLine = document.getElementById('machine-count-line');
 const flipBtn = document.getElementById('flip-btn');
 const soundBtn = document.getElementById('sound-btn');
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Without WebGL this throws: the veil then says the machine would not wake up
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+} catch (err) {
+  stage.classList.add('is-failed');
+  throw err;
+}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // the canvas fills the screen
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
-stage.appendChild(renderer.domElement);
+view.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
 const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-camera.position.set(5.6, 4.6, 8.2);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0.2, 1.5, 0);
+controls.target.set(0.2, 1.15, 0);
 controls.enableDamping = true;
 controls.enablePan = false;
-controls.minDistance = 5;
-controls.maxDistance = 16;
+controls.minDistance = 5; // maxDistance follows the screen, see resize()
 controls.maxPolarAngle = deg(84);
-controls.update();
+renderer.domElement.style.touchAction = 'pan-y'; // vertical swipes still scroll the page
 
-// Lights
-const hemi = new THREE.HemisphereLight(0xfff4ee, 0x3a2a30, 0.6);
+// Lights. They start dark: the opening shot (directShot) brings them up to the
+// levels for the theme. In the light theme the box comes out of a pale mist
+// (the canvas fades in slowly), in the dark theme out of the dark.
+const LIGHTS = {
+  light: { hemi: 0.6, sun: 2.4, rim: 0.8, env: 1, shadow: 0.25, pool: 0, motes: 0.3, fadeIn: 5.5 },
+  dark: { hemi: 0.45, sun: 2.4, rim: 1.4, env: 0.8, shadow: 0.5, pool: 0.22, motes: 0.55, fadeIn: 2 },
+};
+let LIGHT = LIGHTS.light;
+
+const hemi = new THREE.HemisphereLight(0xfff4ee, 0x3a2a30, 0);
 scene.add(hemi);
 
-const sun = new THREE.DirectionalLight(0xfff1e0, 2.4);
+const sun = new THREE.DirectionalLight(0xfff1e0, 0);
 sun.position.set(4, 8, 5);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
@@ -67,12 +84,12 @@ sun.shadow.bias = -0.0005;
 sun.shadow.normalBias = 0.02;
 scene.add(sun);
 
-const rim = new THREE.DirectionalLight(0xd97a9a, 0.8);
+const rim = new THREE.DirectionalLight(0xd97a9a, 0);
 rim.position.set(-6, 3, -4);
 scene.add(rim);
 
-// Floor that only shows the shadow, so the page background shows through
-const floorMat = new THREE.ShadowMaterial({ opacity: 0.25 });
+// Floor that only shows the shadow, so the stage background shows through
+const floorMat = new THREE.ShadowMaterial({ opacity: 0 });
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), floorMat);
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
@@ -108,6 +125,21 @@ function woodTexture(base, grain) {
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return tex;
+}
+
+function glowTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, 'rgba(255, 255, 255, 1)');
+  g.addColorStop(0.35, 'rgba(255, 255, 255, 0.35)');
+  g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
 
@@ -174,7 +206,8 @@ machine.add(mesh(new THREE.BoxGeometry(t, wallH, d - 2 * t), wood, w / 2 - t / 2
 machine.add(mesh(new THREE.BoxGeometry(w - 2 * t, t, d - 2 * t), interior, 0, t / 2, 0));
 
 // Dark lining so the inside reads as a cavity when the lid opens
-const lining = new THREE.MeshStandardMaterial({ color: 0x140d0f, roughness: 1, side: THREE.BackSide });
+// (it glows red when the lid peeks before anyone has touched the switch)
+const lining = new THREE.MeshStandardMaterial({ color: 0x140d0f, roughness: 1, side: THREE.BackSide, emissive: 0xff2a1a, emissiveIntensity: 0 });
 machine.add(mesh(new THREE.BoxGeometry(w - 2 * t - 0.01, wallH - t, d - 2 * t - 0.01), lining, 0, t + (wallH - t) / 2, 0, { cast: false }));
 
 // Feet
@@ -277,6 +310,38 @@ thumb.rotation.x = deg(-35);
 arm.add(thumb);
 machine.add(arm);
 
+// Every lit material, so the opening shot can fade the room reflections in too
+const litMaterials = new Set();
+machine.traverse((o) => {
+  for (const m of [].concat(o.material || [])) if (m.isMeshStandardMaterial) litMaterials.add(m);
+});
+
+// A soft pool of light on the floor, and dust drifting through it
+const glowMap = glowTexture();
+const pool = new THREE.Mesh(
+  new THREE.PlaneGeometry(12, 12),
+  new THREE.MeshBasicMaterial({ map: glowMap, color: 0xffd2b8, transparent: true, opacity: 0, depthWrite: false })
+);
+pool.rotation.x = -Math.PI / 2;
+pool.position.set(0.3, 0.002, 0.6);
+pool.renderOrder = -1;
+scene.add(pool);
+
+const MOTES = 180;
+const motePos = new Float32Array(MOTES * 3);
+for (let i = 0; i < MOTES; i++) {
+  const r = Math.sqrt(Math.random()) * 4.5;
+  const a = Math.random() * Math.PI * 2;
+  motePos.set([Math.cos(a) * r, Math.random() * 4.5, Math.sin(a) * r], i * 3);
+}
+const moteGeo = new THREE.BufferGeometry();
+moteGeo.setAttribute('position', new THREE.BufferAttribute(motePos, 3));
+const motes = new THREE.Points(
+  moteGeo,
+  new THREE.PointsMaterial({ map: glowMap, size: 0.045, transparent: true, opacity: 0, depthWrite: false }) // colour: applyTheme()
+);
+scene.add(motes);
+
 // ---------------------------------------------------------------------------
 // Sound (tiny WebAudio synth, created on first interaction)
 // ---------------------------------------------------------------------------
@@ -368,7 +433,6 @@ const state = {
   leverTarget: LEVER.off,
   raise: 0,
   lid: 0,
-  lidTarget: 0,
   phase: 'idle',
   timer: 0,
   mood: MOODS.normal,
@@ -377,6 +441,7 @@ const state = {
   lastDone: -Infinity,
   streak: 0,
   shake: 0,
+  touched: false,
 };
 
 const clock = new THREE.Clock();
@@ -407,6 +472,8 @@ function pickMood() {
 }
 
 function flip() {
+  state.touched = true;
+  wake();
   sound.init();
   if (sound.ctx && sound.ctx.state === 'suspended') sound.ctx.resume();
 
@@ -467,14 +534,15 @@ function update(dt) {
       if (state.timer <= 0) state.phase = m.peek && !state.run.peeked ? 'peekOpen' : 'open';
       break;
 
-    case 'peekOpen':
-      state.lidTarget = LID_PEEK;
-      state.lid = approach(state.lid, LID_PEEK, deg(40) * dt);
-      if (state.lid === LID_PEEK) {
+    case 'peekOpen': {
+      const peek = state.run.hintOnly ? LID_CRACK : LID_PEEK;
+      state.lid = approach(state.lid, peek, deg(state.run.hintOnly ? 10 : 40) * dt);
+      if (state.lid === peek) {
         state.phase = 'peekHold';
-        state.timer = 1.0;
+        state.timer = state.run.hintOnly ? 1.6 : 1.0;
       }
       break;
+    }
 
     case 'peekHold':
       state.timer -= dt;
@@ -485,9 +553,13 @@ function update(dt) {
       state.lid = approach(state.lid, 0, deg(160) * dt);
       if (state.lid === 0) {
         sound.thunk(0.4);
-        state.run.peeked = true;
-        state.phase = 'wait';
-        state.timer = 0.5;
+        if (state.run.hintOnly) {
+          state.phase = 'idle';
+        } else {
+          state.run.peeked = true;
+          state.phase = 'wait';
+          state.timer = 0.5;
+        }
       }
       break;
 
@@ -544,6 +616,9 @@ function update(dt) {
     }
   }
 
+  // The hint peek lets a little red light out through the crack
+  lining.emissiveIntensity = state.run.hintOnly ? 0.09 * Math.min(state.lid / LID_CRACK, 1) : 0;
+
   // Lever: springs toward its target, but the finger can push it over centre
   state.lever = approach(state.lever, state.leverTarget, deg(900) * dt);
   if (state.switchOn) {
@@ -560,6 +635,7 @@ function update(dt) {
         state.leverTarget = LEVER.off;
         state.count++;
         countEl.textContent = state.count;
+        countLine.hidden = false;
         sound.click(m.slam ? 1.2 : 1);
         if (state.phase === 'reach' || state.phase === 'tease') {
           state.phase = 'hold';
@@ -610,6 +686,19 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
   downAt = { x: e.clientX, y: e.clientY };
 });
 
+// Dragging or zooming hands the camera over to the visitor
+function takeOver() {
+  shot.driving = false;
+  wake();
+}
+
+renderer.domElement.addEventListener('pointermove', (e) => {
+  if (downAt && shot.driving && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) >= 6) takeOver();
+  if (e.pointerType === 'mouse') renderer.domElement.style.cursor = hitsSwitch(e) ? 'pointer' : '';
+});
+
+renderer.domElement.addEventListener('wheel', takeOver, { passive: true });
+
 renderer.domElement.addEventListener('pointerup', (e) => {
   if (!downAt) return;
   const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
@@ -617,10 +706,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   if (moved < 6 && hitsSwitch(e)) flip();
 });
 
-renderer.domElement.addEventListener('pointermove', (e) => {
-  if (e.pointerType !== 'mouse') return;
-  renderer.domElement.style.cursor = hitsSwitch(e) ? 'pointer' : '';
-});
+renderer.domElement.addEventListener('pointercancel', () => (downAt = null));
 
 flipBtn.addEventListener('click', flip);
 
@@ -632,13 +718,86 @@ soundBtn.addEventListener('click', () => {
 });
 
 // ---------------------------------------------------------------------------
+// The opening shot: the box comes out of the dark (the rim light first, then
+// the key light) while the camera drifts in on a slow arc. Afterwards the
+// camera keeps breathing a little, until someone grabs the view.
+// ---------------------------------------------------------------------------
+const SHOT = {
+  from: { theta: deg(-50), phi: deg(82), dist: 1.55 }, // dist is relative to frameDist
+  to: { theta: deg(32), phi: deg(71), dist: 1 },
+  duration: 10,
+  awake: 6.5, // the switch is offered (status line and buttons fade in)
+  hint: 12, // the lid peeks once, if nobody has touched anything yet
+};
+
+// Someone coming back in the same session gets a shorter opening
+let seen = false;
+try {
+  seen = sessionStorage.getItem('machine-seen') === '1';
+  sessionStorage.setItem('machine-seen', '1');
+} catch {
+  // storage blocked: every visit gets the full opening
+}
+
+// t runs the shot (and may start late), age is the time since the veil lifted
+const shot = { t: reduceMotion.matches ? SHOT.duration : seen ? 4 : 0, age: 0, fade: -1, driving: true, hinted: false };
+const orbit = new THREE.Spherical();
+let frameDist = 10.5; // distance that fits the box on this screen, see resize()
+
+function easeInOut(x) {
+  return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+}
+
+function wake() {
+  if (stage.classList.contains('is-awake')) return;
+  stage.classList.add('is-awake');
+  if (!state.touched) say("Don't touch the switch.");
+}
+
+function directShot() {
+  const t = shot.t;
+  const ramp = THREE.MathUtils.smoothstep;
+  const rimUp = ramp(t, 0.4, 3.4);
+  const keyUp = ramp(t, 1.8, 6.5);
+  rim.intensity = LIGHT.rim * rimUp;
+  sun.intensity = LIGHT.sun * keyUp;
+  hemi.intensity = LIGHT.hemi * keyUp;
+  for (const m of litMaterials) m.envMapIntensity = LIGHT.env * keyUp;
+  floorMat.opacity = LIGHT.shadow * keyUp;
+  pool.material.opacity = LIGHT.pool * keyUp;
+  motes.material.opacity = LIGHT.motes * ramp(t, 2.5, 7);
+  const fade = ramp(shot.age, 0.2, LIGHT.fadeIn);
+  if (fade !== shot.fade) view.style.opacity = shot.fade = fade;
+
+  if (t >= SHOT.awake) wake();
+  if (t >= SHOT.hint && !shot.hinted && !state.touched && state.phase === 'idle' && !reduceMotion.matches) {
+    // Something inside lifts the lid a crack and has a look
+    shot.hinted = true;
+    state.run = { hintOnly: true };
+    state.phase = 'peekOpen';
+  }
+
+  if (!shot.driving) return;
+  const { from, to } = SHOT;
+  const k = easeInOut(Math.min(t / SHOT.duration, 1));
+  const sway = reduceMotion.matches ? 0 : Math.sin((t - SHOT.duration) * 0.25) * deg(3) * ramp(t, SHOT.duration, SHOT.duration + 5);
+  orbit.set(
+    frameDist * THREE.MathUtils.lerp(from.dist, to.dist, k),
+    THREE.MathUtils.lerp(from.phi, to.phi, k),
+    THREE.MathUtils.lerp(from.theta, to.theta, k) + sway
+  );
+  camera.position.setFromSpherical(orbit).add(controls.target);
+}
+
+// ---------------------------------------------------------------------------
 // Theme + resize + loop
 // ---------------------------------------------------------------------------
 function applyTheme() {
   const dark = document.body.classList.contains('dark-mode');
-  floorMat.opacity = dark ? 0.5 : 0.25;
-  hemi.intensity = dark ? 0.45 : 0.6;
-  rim.intensity = dark ? 1.4 : 0.8;
+  LIGHT = dark ? LIGHTS.dark : LIGHTS.light;
+  // Dust glows in the dark and just floats about in the mist
+  motes.material.blending = dark ? THREE.AdditiveBlending : THREE.NormalBlending;
+  motes.material.color.setHex(dark ? 0xffe3c8 : 0x9a6b7a);
 }
 applyTheme();
 new MutationObserver(applyTheme).observe(document.body, { attributes: true, attributeFilter: ['class'] });
@@ -649,14 +808,44 @@ function resize() {
   renderer.setSize(clientWidth, clientHeight, false);
   camera.aspect = clientWidth / clientHeight;
   camera.updateProjectionMatrix();
+  // Step back on narrow screens so the box, and the arm when it comes out, stay in frame
+  frameDist = Math.max(10.5, 7 / (2 * Math.tan(deg(camera.fov / 2)) * camera.aspect));
+  controls.maxDistance = frameDist * SHOT.from.dist;
 }
 new ResizeObserver(resize).observe(stage);
 resize();
 
-renderer.setAnimationLoop(() => {
+let visible = true;
+new IntersectionObserver(([entry]) => {
+  visible = entry.isIntersecting;
+}).observe(stage);
+
+function frame() {
   const dt = Math.min(clock.getDelta(), 1 / 20);
+  if (!visible) return;
   elapsed += dt;
+  shot.t += dt;
+  shot.age += dt;
   update(dt);
+  directShot();
   controls.update();
+  motes.rotation.y += dt * 0.02;
+  motes.position.y = Math.sin(elapsed * 0.3) * 0.12;
   renderer.render(scene, camera);
-});
+}
+
+// ---------------------------------------------------------------------------
+// Boot: get every shader onto the GPU while the veil is still up (without
+// blocking the page), so the reveal itself never stutters. Then lift the veil,
+// but only after the crack of light has had a moment to breathe.
+// ---------------------------------------------------------------------------
+directShot();
+controls.update();
+await renderer.compileAsync(scene, camera).catch(() => {});
+renderer.render(scene, camera); // also builds the shadow programs
+
+const darkness = (seen ? 400 : 1600) - performance.now();
+if (darkness > 0) await new Promise((resolve) => setTimeout(resolve, darkness));
+
+stage.classList.add('is-ready');
+renderer.setAnimationLoop(frame);

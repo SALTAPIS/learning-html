@@ -4,42 +4,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Useless Machine</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="favicon.png" type="image/png">
     <script type="importmap">
     {
         "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js",
             "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
         }
     }
     </script>
+    <!-- Start fetching the 3D code right away instead of after the page has been parsed -->
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js">
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js">
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js">
+    <link rel="modulepreload" href="machine.js">
 </head>
-<body>
+<body class="stage-page">
     <header id="site-header">
 
     </header>
 
-    <main>
-        <p class="eyebrow">Three.js experiment</p>
-        <h1>The Useless Machine</h1>
-        <p>
-            A box with a single switch. Flip it on, and the lid opens, a hand reaches out,
-            switches it off again and disappears. That is all it does. Click the switch
-            (or the button below) and drag to look around.
-        </p>
+    <main class="machine-main">
+        <h1 class="visually-hidden">The Useless Machine</h1>
 
-        <div class="machine-stage" id="machine-stage" role="img" aria-label="3D model of the useless machine: a wooden box with a toggle switch and a hidden mechanical hand"></div>
+        <!-- The box waits in the mist (or the dark). While the 3D code loads, only a
+             crack of light shows; it only starts whispering if loading takes a while
+             (see styles.css). -->
+        <section class="machine-stage" id="machine-stage" aria-label="The useless machine">
+            <div class="machine-view" id="machine-view" role="img" aria-label="3D model of a wooden box with a toggle switch on its lid"></div>
 
-        <div class="machine-controls">
-            <button id="flip-btn" class="machine-btn" type="button">Flip the switch</button>
-            <button id="sound-btn" class="machine-btn machine-btn--ghost" type="button" aria-pressed="true">Sound: on</button>
-            <p class="machine-count">Switched itself off <strong id="machine-count">0</strong> times</p>
-        </div>
-        <p class="machine-status" id="machine-status" aria-live="polite">Waiting for someone to touch the switch.</p>
+            <div class="machine-veil" aria-hidden="true">
+                <span class="machine-slit"></span>
+                <p class="machine-whisper machine-whisper--soon">Something is in here.</p>
+                <p class="machine-whisper machine-whisper--late">It is in no hurry.</p>
+                <p class="machine-whisper machine-whisper--failed">It would not wake up. Reload to try again.</p>
+            </div>
 
-        <section class="machine-history">
+            <div class="machine-hud">
+                <div class="machine-readout">
+                    <p class="machine-status" id="machine-status" aria-live="polite"></p>
+                    <p class="machine-count" id="machine-count-line" hidden>Switched itself off <strong id="machine-count">0</strong> times</p>
+                </div>
+                <div class="machine-controls">
+                    <button id="sound-btn" class="machine-btn machine-btn--ghost" type="button" aria-pressed="true">Sound: on</button>
+                    <button id="flip-btn" class="machine-btn" type="button">Flip the switch</button>
+                </div>
+            </div>
+
+            <a class="machine-more" href="#history">A little history</a>
+        </section>
+
+        <section class="machine-history stage-card" id="history">
             <h2>A little history</h2>
+            <p>
+                A box with a single switch. Flip it on, and the lid opens, a hand reaches out,
+                switches it off again and disappears. That is all it does.
+            </p>
             <p>
                 The idea came from Marvin Minsky in the early 1950s, while he was a graduate student at
                 Bell Telephone Laboratories. His colleague Claude Shannon, the father of information theory,
@@ -58,6 +80,6 @@
         <p>&copy; 2026 Web Technology Class, BiUH</p>
     </footer>
 <script src="nav.js"></script>
-<script type="module" src="machine.js"></script>
+<script type="module" src="machine.js" onerror="document.getElementById('machine-stage').classList.add('is-failed')"></script>
 </body>
 </html>

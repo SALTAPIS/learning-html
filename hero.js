@@ -22,6 +22,7 @@ const ARM = { x: -0.8, down: -1.9, up: -0.9, z: 0.12, fingerR: 0.045 };
 const TIP = { x: 0.335, y: 1.5 }; // fingertip, relative to the arm pivot
 const CLIP_Y = -LID.drop; // the hand is only drawn above the slot
 const ARM_CLEAR = -1.75; // below this the hand is fully back inside
+const BOOT_HOLD = 0.9; // seconds the 3D i stands up straight before it tips over into a switch
 const LID_OPEN = deg(36);
 const LID_PEEK = deg(12);
 const ARM_PUSH = deg(22);
@@ -81,13 +82,13 @@ const clip = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 // ---------------------------------------------------------------------------
 await document.fonts.load('800 100px Recursive').catch(() => {});
 
+// The lines stay where they are (only their text is split), so their entrance
+// animation keeps running
 function splitLetters(root) {
   const label = root.textContent.replace(/\s+/g, ' ').trim();
-  const visual = document.createElement('span');
-  visual.setAttribute('aria-hidden', 'true');
-  visual.append(...root.childNodes);
+  for (const line of root.children) line.setAttribute('aria-hidden', 'true');
 
-  const walker = document.createTreeWalker(visual, NodeFilter.SHOW_TEXT);
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const textNodes = [];
   while (walker.nextNode()) textNodes.push(walker.currentNode);
   for (const node of textNodes) {
@@ -109,8 +110,8 @@ function splitLetters(root) {
   const readable = document.createElement('span');
   readable.className = 'visually-hidden';
   readable.textContent = label;
-  root.append(readable, visual);
-  return [...visual.querySelectorAll('.hero-ch')];
+  root.append(readable);
+  return [...root.querySelectorAll('.hero-ch')];
 }
 
 const letters = splitLetters(title);
@@ -381,7 +382,8 @@ const MOODS = {
 
 const state = {
   switchOn: false,
-  lever: LEVER.off,
+  lever: reduceMotion.matches ? LEVER.off : 0, // starts out as an upright i
+  boot: reduceMotion.matches ? 0 : BOOT_HOLD,
   leverTarget: LEVER.off,
   lid: 0,
   armY: ARM.down,
@@ -478,6 +480,7 @@ function fingertip() {
 function update(dt) {
   const m = state.mood;
   const prevLid = state.lid;
+  state.boot = Math.max(0, state.boot - dt);
 
   switch (state.phase) {
     case 'wait':
@@ -573,7 +576,8 @@ function update(dt) {
 
   // Lever: snaps to its position, leans a little toward "on" when hovered,
   // and gets pushed over centre by the finger
-  const target = !state.switchOn && state.hover && state.phase === 'idle' ? LEVER.off + deg(6) : state.leverTarget;
+  let target = !state.switchOn && state.hover && state.phase === 'idle' ? LEVER.off + deg(6) : state.leverTarget;
+  if (state.boot > 0) target = 0;
   const prevLever = state.lever;
   state.lever = approach(state.lever, target, (Math.abs(target - state.lever) < deg(8) ? deg(80) : deg(900)) * dt);
 
@@ -624,7 +628,7 @@ function update(dt) {
   lid.rotation.z = state.lid;
   lever.rotation.z = state.lever;
 
-  return state.phase !== 'idle' || state.lever !== prevLever || state.shake > 0 || knobSettling;
+  return state.phase !== 'idle' || state.boot > 0 || state.lever !== prevLever || state.shake > 0 || knobSettling;
 }
 
 // ---------------------------------------------------------------------------
@@ -634,13 +638,6 @@ switchEl.addEventListener('click', flip);
 switchEl.addEventListener('pointerenter', () => (state.hover = true));
 switchEl.addEventListener('pointerleave', () => (state.hover = false));
 flipBtn.addEventListener('click', flip);
-
-// A visitor who hasn't touched anything gets one small hint: the lid peeks open
-setTimeout(() => {
-  if (state.touched || state.phase !== 'idle' || reduceMotion.matches || !visible) return;
-  state.run = { hintOnly: true };
-  state.phase = 'peekOpen';
-}, 4000);
 
 // ---------------------------------------------------------------------------
 // Theme, visibility, loop
@@ -664,7 +661,7 @@ new IntersectionObserver(([entry]) => {
   visible = entry.isIntersecting;
 }).observe(hero);
 
-renderer.setAnimationLoop(() => {
+function frame() {
   const dt = Math.min(clock.getDelta(), 1 / 20);
   if (!visible) return;
   elapsed += dt;
@@ -674,6 +671,26 @@ renderer.setAnimationLoop(() => {
     renderer.render(scene, camera);
     dirty = false;
   }
-});
+}
 
+// ---------------------------------------------------------------------------
+// Boot: compile the shaders without blocking the page and let the headline
+// finish its entrance. Then the 3D parts take over from the letters (a short
+// crossfade, see .hero-stage in styles.css): the i stands up straight for a
+// moment, then tips over and is a switch.
+// ---------------------------------------------------------------------------
+measure(); // builds the lid, so its material is compiled too
+await renderer.compileAsync(scene, camera).catch(() => {});
+await Promise.all(title.getAnimations({ subtree: true }).map((a) => a.finished)).catch(() => {});
+measure();
+update(0);
+renderer.render(scene, camera);
 hero.classList.add('is-live');
+renderer.setAnimationLoop(frame);
+
+// A visitor who hasn't touched anything gets one small hint: the lid peeks open
+setTimeout(() => {
+  if (state.touched || state.phase !== 'idle' || reduceMotion.matches || !visible) return;
+  state.run = { hintOnly: true };
+  state.phase = 'peekOpen';
+}, 4000);
